@@ -1,5 +1,11 @@
 package main
 
+import "os"
+
 func main() {
-	Run("20200925")
+	start := ""
+	if len(os.Args) > 1 {
+		start = os.Args[1]
+	}
+	Run(start)
 }

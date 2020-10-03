@@ -6,11 +6,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"os"
 	"path"
+	"runtime"
 	"sort"
 	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"database/sql"
@@ -71,12 +75,12 @@ func init() {
 	tradMins = mapset.NewSet()
 
 	tickCsvPath = "/mnt/future_tick_csv_gz/"
-	if tmp := os.Getenv("tick_csv_gz"); tmp != "" {
+	if tmp := os.Getenv("tickCsvPath"); tmp != "" {
 		tickCsvPath = tmp
 	}
 
-	pgConfig = "postgres://postgres:123456@172.19.129.98:25432/postgres?sslmode=disable"
-	if tmp := os.Getenv("pg_config"); len(tmp) > 0 {
+	pgConfig = "postgres://postgres:123456@172.19.129.98:5432/postgres?sslmode=disable"
+	if tmp := os.Getenv("pgConfig"); len(tmp) > 0 {
 		pgConfig = tmp
 	}
 	logger.Info("postgres :", pgConfig)
@@ -189,9 +193,41 @@ func Run(startDay string) {
 		rows.Next()
 		rows.Scan(&startDay)
 	} else { // 客户输入日期,处理时包含此值
-		// 取日期前一自然日, 因:取交易日列表的逻辑中为 >
-		tmp, _ := time.Parse("20060102", startDay)
-		startDay = tmp.AddDate(0, 0, -1).Format("20060102")
+		// tick 文件列表
+		tickFiles := []string{}
+		files, _ := ioutil.ReadDir(tickCsvPath)
+		for _, f := range files {
+			if !f.IsDir() {
+				name := strings.Split(f.Name(), ".")[0]
+				if name >= startDay {
+					tickFiles = append(tickFiles, name)
+				}
+			}
+		}
+		sort.Strings(tickFiles)
+		startDay = tickFiles[len(tickFiles)-1]
+
+		// 使用chan 控制协程总数
+		var waitGroup sync.WaitGroup
+		chDay := make(chan string, runtime.NumCPU())
+		for _, day := range tickFiles {
+			chDay <- day
+			waitGroup.Add(1)
+			// gzip 读取tick.csv.gz数据
+			// 文件不存在,sleep 10min重读
+			go func(d string) {
+				logger.Infof("%s starting...", d)
+				msg, err := run(d)
+				if err != nil {
+					logger.Error(msg, err)
+					panic(err)
+				}
+				<-chDay
+				waitGroup.Done()
+			}(day)
+		}
+		waitGroup.Wait()
+		close(chDay)
 	}
 	// 取大于日期的交易日
 	var days []string
@@ -200,6 +236,7 @@ func Run(startDay string) {
 			days = append(days, day)
 		}
 	}
+
 	for _, day := range days {
 		// gzip 读取tick.csv.gz数据
 		// 文件不存在,sleep 10min重读
@@ -351,6 +388,6 @@ func run(tradingDay string) (string, error) {
 		tx.Rollback()
 		return "入库错误", err
 	}
-
+	logger.Info(tradingDay, " finished.")
 	return "", nil
 }
