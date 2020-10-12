@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+    go_tick_min:
+        image: haifengat/go_tick_min
+        container_name: go_tick_min
+        restart: always
+        environment:
+            - TZ=Asia/Shanghai
+            - tickCsvPath=/home/csv_path
+            - pgConfig=postgresql://postgres:123456@hf_pg:5432/postgres?sslmode=disable
+        volumes:
+            # 替换为宿主 tick.csv 文件路径
+            - /mnt/future_tick_csv_gz:/home/csv_path
+        deploy:
+            resources:
+                limits:
+                    memory: 1G
+                reservations:
+                    memory: 200M
