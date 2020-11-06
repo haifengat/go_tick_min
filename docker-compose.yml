@@ -6,11 +6,11 @@ services:
         restart: always
         environment:
             - TZ=Asia/Shanghai
-            - tickCsvPath=/home/csv_path
+            # - tickCsvPath=/csv
             - pgConfig=postgresql://postgres:123456@hf_pg:5432/postgres?sslmode=disable
         volumes:
             # 替换为宿主 tick.csv 文件路径
-            - /mnt/future_tick_csv_gz:/home/csv_path
+            - /mnt/future_tick_csv_gz:/csv
         deploy:
             resources:
                 limits:

@@ -74,7 +74,7 @@ func init() {
 	endMins = mapset.NewSet()
 	tradMins = mapset.NewSet()
 
-	tickCsvPath = "/mnt/future_tick_csv_gz/"
+	tickCsvPath = "/csv"
 	if tmp := os.Getenv("tickCsvPath"); tmp != "" {
 		tickCsvPath = tmp
 	}
