@@ -79,7 +79,7 @@ func init() {
 		tickCsvPath = tmp
 	}
 
-	pgConfig = "postgres://postgres:123456@172.19.129.98:5432/postgres?sslmode=disable"
+	pgConfig = "postgres://postgres:123456@172.19.129.98:25432/postgres?sslmode=disable"
 	if tmp := os.Getenv("pgConfig"); len(tmp) > 0 {
 		pgConfig = tmp
 	}
