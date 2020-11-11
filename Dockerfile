@@ -10,6 +10,7 @@ COPY go.sum .
 RUN adduser -u 10001 -D app-runner
 # 编译
 COPY . .
+COPY ./src ./src
 RUN go mod download; \
     CGO_ENABLED=0 GOARCH=amd64 GOOS=linux go build -a -o run .;
 

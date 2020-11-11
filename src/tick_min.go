@@ -1,4 +1,4 @@
-package main
+package src
 
 import (
 	"compress/gzip"
@@ -217,7 +217,7 @@ func Run(startDay string) {
 			// 文件不存在,sleep 10min重读
 			go func(d string) {
 				logger.Infof("%s starting...", d)
-				msg, err := run(d)
+				msg, err := RunOnce(d)
 				if err != nil {
 					logger.Error(msg, err)
 					panic(err)
@@ -242,7 +242,7 @@ func Run(startDay string) {
 		// 文件不存在,sleep 10min重读
 		logger.Infof("%s starting...", day)
 		for {
-			msg, err := run(day)
+			msg, err := RunOnce(day)
 			if err == nil {
 				break
 			} else if msg == "文件不存在" {
@@ -255,7 +255,8 @@ func Run(startDay string) {
 	}
 }
 
-func run(tradingDay string) (string, error) {
+// RunOnce 处理一天数据
+func RunOnce(tradingDay string) (string, error) {
 	tickFile := path.Join(tickCsvPath, tradingDay+".csv.gz")
 	_, err := os.Stat(tickFile)
 	if err != nil {
